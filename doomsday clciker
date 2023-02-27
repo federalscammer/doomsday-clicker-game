@@ -1,0 +1,115 @@
+import random
+import pygame
+
+# Initialize Pygame
+pygame.init()
+
+# Set up the game window
+screen_width = 800
+screen_height = 600
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Fancy Clicker")
+
+# Define colors
+white = (255, 255, 255)
+black = (0, 0, 0)
+gray = (128, 128, 128)
+red = (255, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
+
+# Set up the font
+font = pygame.font.Font(None, 60)
+
+# Load sound effect
+click_sound = pygame.mixer.Sound("ES_Suction Pop 7 - SFX Producer.mp3")
+
+# Create the target class
+class Target(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface((50, 50))
+        self.image.fill(red)
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randrange(screen_width - self.rect.width)
+        self.rect.y = random.randrange(screen_height - self.rect.height)
+        self.color = red
+        self.color_timer = 0
+        self.color_interval = 30  # The number of frames between color changes
+
+    def update(self):
+        # Change the color of the target periodically
+        self.color_timer += 1
+        if self.color_timer == self.color_interval:
+            self.color = random.choice([red, green, blue])
+            self.image.fill(self.color)
+            self.color_timer = 0
+        
+# Create the score class
+class Score():
+    def __init__(self):
+        self.value = 0
+        self.surface = font.render(f"Score: {self.value}", True, white)
+        self.rect = self.surface.get_rect()
+        self.rect.x = screen_width - self.rect.width
+        self.rect.y = 0
+
+    def add(self):
+        self.value += 1
+        self.surface = font.render(f"Score: {self.value}", True, white)
+        click_sound.play()  # Play sound effect
+
+# Create the sprite groups
+all_sprites = pygame.sprite.Group()
+targets = pygame.sprite.Group()
+
+# Create the score object
+score = Score()
+
+# Set up the clock
+clock = pygame.time.Clock()
+fps = 60
+
+# Set up the game loop
+game_over = False
+while not game_over:
+    # Handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            game_over = True
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            # Check if the mouse click hit a target
+            pos = pygame.mouse.get_pos()
+            clicked_targets = [t for t in targets if t.rect.collidepoint(pos)]
+            if clicked_targets:
+                # Remove the clicked targets and add to score
+                for target in clicked_targets:
+                    target.kill()
+                score.add()
+
+    # Spawn new targets randomly
+    if random.random() < 0.02:
+        target = Target()
+        all_sprites.add(target)
+        targets.add(target)
+
+    # Update all sprites
+    all_sprites.update()
+
+    # Draw the background
+    screen.fill(gray)
+
+    # Draw all sprites
+    all_sprites.draw(screen)
+
+    # Draw the score
+    screen.blit(score.surface, score.rect)
+
+    # Update the display
+    pygame.display.flip()
+
+    # Cap the frame rate
+    clock.tick(fps)
+
+# Quit Pygame
+pygame.quit()
